@@ -13,10 +13,10 @@ namespace C_Sharp_Speedrun1
             "That isn't an available game, c\'mon!",
             "Stop messing with me!",
             "A negative bet? Did you hit your head or...?",
-            "You don't even have that much, hmph! Try again!"
+            "You don't even have that much, hmph! Try again!",
             "You can only enter 0 or 1, fufu~ Try again!"
-        }
-        static void errorType(errorIndex) { Console.Write(errorLines[i] + "\n\n"); } //Throw a specific error message and make a new line
+        };
+        static void errorType(int errorIndex) { Console.Write(errorLines[errorIndex] + "\n\n"); } //Throw a specific error message and make a new line
         
         static ulong handleGameCoinflip(ulong balance)
         {
