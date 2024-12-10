@@ -1,7 +1,8 @@
 .data
+gameTable:.word gameCoin, gameDice # Implementation of arrays
 
-errorLine1:.asciiz "That isn't an available game."
-errorLine2:.asciiz "Stop messing with me!\n\n" # The game would just crash if a player enters a non-integer, so this is unused
+errorLine1:.asciiz "That's not a game..."
+errorLine2:.asciiz "Stop messing with me! " # The game would just crash if a player enters a non-integer, so this is unused
 errorLine3:.asciiz "A negative bet? Did you hit your head or...?\n\n"
 errorLine4:.asciiz "You don't even have that much, hmph! Try again!\n\n"
 errorLine5:.asciiz "You can only enter 0 or 1, fufu~ Try again!\n\n"
@@ -33,7 +34,7 @@ main:
 	
 mainGameLoop:
 	lw $t0, ($s0) # Load Furidollars into register t0
-	beq $t0,0, gameOver # If the player has 0 coins, jump to gameOver
+	beqz $t0, gameOver # If the player has 0 coins, jump to gameOver
 	
 	li $v0, 4 # Print string instruction
 	la $a0, gameStart1 # First argument is 'gameStart1' String
@@ -47,7 +48,7 @@ mainGameLoop:
 	la $a0, gameStart3
 	syscall
 	
-	li $v0, 5 # Get player game choice
+	li $v0, 5 # Get player game choice (integer-only)
 	syscall
 	move $t1, $v0 # Load player choice into register t1
 	
@@ -55,10 +56,13 @@ mainGameLoop:
 	la $a0, line_down # Just to make the CLI prettier
 	syscall
 	
-	blt $t1, 0, errorGameNotAvailable # If the input is negative, jump to error label 0
+	bltz $t1, errorGameNotAvailable # If the input is negative, jump to error label 0
 	bgt $t1, 1, errorGameNotAvailable # If the input is higher than 1, jump to error label 0
-	beq $t1, 0, gameCoin
-	beq $t1, 1, gameDice
+	la $a0, gameTable # Load address of the first game label (gameCoin)
+	sll $t1, $t1, 2 # Multiply by 4 (By bit-shifting to the left by 2) to get desired array element's separation
+	add $a0, $a0, $t1 # Desired array element address
+	lw $t1, 0($a0)
+	jr $t1 # Go to chosen game (Jr is jumping to the address at register, while j jumps to the address or label itself)
 	
 	
 gameCoin:
@@ -69,13 +73,13 @@ gameCoin:
 	li $v0, 42 # Generate a random integer
 	li $a1, 2 # Between 0-1 and return to $a0
 	syscall
-	beq $a0, 0, gameCoinWin # If random number is 0, jump to win. Otherwise, lose.
+	beqz $a0, gameCoinWin # If random number is 0, jump to win. Otherwise, lose.
 	j gameCoinLose
 	
 	
 gameCoinWin:
 	lw $t0, ($s0) # Load Furidollars into register t0
-	mulu $t0, $t0, 2
+	sll $t0, $t0, 1 # Multiply currency by 2 (By bit-shifting to the left by 1)
 	sw $t0, ($s0)
 	
 	li $v0, 4 # Print string instruction
@@ -106,11 +110,11 @@ gameDice:
 	la $a0, gameDice1 
 	syscall
 	
-	li $v0, 5 # Get player bet amount
+	li $v0, 5 # Get player bet amount (integer-only)
 	syscall
 	move $t1, $v0 # Load player choice into register t1
 	
-	blt $t1, 0, errorNegativeBet # If the bet amount is negative, jump to error line 2
+	bltz $t1, errorNegativeBet # If the bet amount is negative, jump to error line 2
 	bgt $t1, $t0, errorBetTooHigh # If the bet amount is higher than current Furidollars, jump to error line 3
 	
 	
@@ -118,11 +122,11 @@ gameDice:
 	la $a0, gameDice2
 	syscall
 	
-	li $v0, 5 # Get player bet choice
+	li $v0, 5 # Get player bet choice (integer-only)
 	syscall
 	move $t2, $v0 # Load player choice into register t2
 	
-	blt $t2, 0, errorDiceBetChoice # If the bet choice is negative, jump to error line 4
+	bltz $t2, errorDiceBetChoice # If the bet choice is negative, jump to error line 4
 	bgt $t2, 1, errorDiceBetChoice # If the bet choice is higher than 1, jump to error line 4
 	
 	li $v0, 42 # Generate a random integer
